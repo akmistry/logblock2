@@ -1,0 +1,40 @@
+syntax = "proto3";
+package wal_pb;
+
+option go_package = "github.com/akmistry/logblock2/internal/wal/pb";
+
+message Header {
+  // Version number. Should be 1.
+  uint32 version = 1;
+
+  // Block size, in bytes.
+  uint32 block_size = 2;
+
+  // Alignment of entries, in bytes.
+  uint32 align = 3;
+
+  enum ChecksumType {
+    NONE = 0;
+    CRC32IEEE = 1;
+  }
+  ChecksumType checksum_type = 4;
+}
+
+message IndexEntry {
+  enum Type {
+    INVALID = 0;
+    WRITE = 1;
+    TRIM = 2;
+  }
+  // Log entry type.
+  Type type = 1;
+
+  // Offset of entry in block device, in blocks.
+  uint64 offset = 2;
+
+  // Length of operation, in blocks.
+  uint64 length = 3;
+
+  // Offset of entry data in log file, in bytes.
+  uint64 log_offset = 4;
+}
