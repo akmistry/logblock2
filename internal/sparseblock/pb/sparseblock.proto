@@ -1,0 +1,35 @@
+syntax = "proto3";
+package sparseblock_pb;
+
+option go_package = "github.com/akmistry/logblock2/internal/sparseblock/pb";
+
+message Header {
+  // Version number. MUST be 1.
+  uint32 version = 1;
+
+  // Block size, in bytes. Does NOT need to be aligned.
+  // Min: 512, max: 1MB
+  uint32 block_size = 2;
+
+  // Number of range entries. Packed immediately after the
+  // header.
+  uint32 num_range_entries = 3;
+
+  // Size of a range entry, in bytes.
+  uint32 range_entry_size = 8;
+
+  // Number of block entries. Packed immediately after the range headers.
+  uint32 num_block_entries = 4;
+
+  // Size of a block entry, in bytes.
+  uint32 block_entry_size = 9;
+
+  // Total number of blocks represented in the file, including zero blocks.
+  uint64 total_blocks = 5;
+
+  // Total number of data blocks (does not include zero blocks).
+  uint64 total_data_blocks = 6;
+
+  // Index of last block, plus 1.
+  uint64 end_block = 7;
+}
