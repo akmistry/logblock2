@@ -26,7 +26,7 @@ func BuildFromReader(dst io.Writer, src t.HoleReaderAt, blockSize int, opts *Bui
 	}
 	if maxDataSize < lowMaxDataSizeThreshold {
 		// Warn the user if MaxDataSize is set too low.
-		slog.Warn(fmt.Sprintf("sparsefile/BuildFromReader: MaxDataSize less than suggested minimum %d",
+		slog.Warn(fmt.Sprintf("sparseblock/BuildFromReader: MaxDataSize less than suggested minimum %d",
 			lowMaxDataSizeThreshold))
 	}
 
@@ -71,7 +71,7 @@ func BuildFromReader(dst io.Writer, src t.HoleReaderAt, blockSize int, opts *Bui
 	defer func() {
 		addTime := buildStart.Sub(addStart)
 		buildTime := time.Since(buildStart)
-		slog.Info("sparsefile/BuildFromReader: Build done",
+		slog.Info("sparseblock/BuildFromReader: Build done",
 			"entries", count,
 			"addTime", addTime,
 			"addTimePerEntry", addTime/time.Duration(count),
