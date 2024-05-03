@@ -1,0 +1,36 @@
+syntax = "proto3";
+package metadata_pb;
+
+option go_package = "github.com/akmistry/logblock2/internal/metadata/pb";
+
+enum DataFileType {
+  UNSPECIFIED = 0;
+  SPARSE_TABLE = 1;
+  WRITE_LOG = 2;
+}
+
+message DataFile {
+  // Type of the data file.
+  DataFileType type = 1;
+
+  // Name of the file.
+  string name = 2;
+
+  // Size of the data file, in bytes.
+  uint64 size = 3;
+
+  // First/last block contained in the data file.
+  uint64 first_block = 16;
+  uint64 last_block = 17;
+}
+
+message Metadata {
+  // Block size, in bytes.
+  uint32 block_size = 1;
+
+  // Size of device, in blocks.
+  uint64 num_blocks = 2;
+
+  // List of data files, sorted oldest first.
+  repeated DataFile data_files = 3;
+}
