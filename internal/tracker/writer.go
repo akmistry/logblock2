@@ -26,7 +26,7 @@ type TrackedWriter interface {
 	Written() int64
 }
 
-type WriterTracker struct {
+type Writer struct {
 	blockSize        int
 	activeWriter     TrackedWriter
 	activeWriterLock sync.Mutex
@@ -38,19 +38,19 @@ type WriterTracker struct {
 	pendingWritersWb   util.WaitBarrier
 }
 
-func NewWriterTracker(blockSize int) *WriterTracker {
-	return &WriterTracker{
+func NewWriter(blockSize int) *Writer {
+	return &Writer{
 		blockSize: blockSize,
 	}
 }
 
-func (m *WriterTracker) PushPending(wl TrackedWriter) {
+func (m *Writer) PushPending(wl TrackedWriter) {
 	m.pendingWritersLock.Lock()
 	m.pendingWriters = append(m.pendingWriters, wl)
 	m.pendingWritersLock.Unlock()
 }
 
-func (m *WriterTracker) RemovePending(p []TrackedWriter) {
+func (m *Writer) RemovePending(p []TrackedWriter) {
 	m.pendingWritersLock.Lock()
 	defer m.pendingWritersWb.BarrierWithUnlock(&m.pendingWritersLock)
 
@@ -64,13 +64,13 @@ func (m *WriterTracker) RemovePending(p []TrackedWriter) {
 	}
 }
 
-func (m *WriterTracker) Pending() []TrackedWriter {
+func (m *Writer) Pending() []TrackedWriter {
 	m.pendingWritersLock.Lock()
 	defer m.pendingWritersLock.Unlock()
 	return slices.Clone(m.pendingWriters)
 }
 
-func (m *WriterTracker) PushNewLog(wl TrackedWriter) TrackedWriter {
+func (m *Writer) PushNewLog(wl TrackedWriter) TrackedWriter {
 	// Make the current and pendings writers consistent from the point of view
 	// of any active Flush().
 	m.pendingWritersLock.Lock()
@@ -105,7 +105,7 @@ func (m *WriterTracker) PushNewLog(wl TrackedWriter) TrackedWriter {
 	return oldWriter
 }
 
-func (m *WriterTracker) WriteBlocks(buf []byte, index int64) (blocksRead int, err error) {
+func (m *Writer) WriteBlocks(buf []byte, index int64) (blocksRead int, err error) {
 	m.activeWriterLock.Lock()
 	writer := m.activeWriter
 	defer m.activeWriterWb.Start().Done()
@@ -122,11 +122,11 @@ func (m *WriterTracker) WriteBlocks(buf []byte, index int64) (blocksRead int, er
 	return n, err
 }
 
-func (m *WriterTracker) LogWritten() int64 {
+func (m *Writer) LogWritten() int64 {
 	return m.writeCount.Load()
 }
 
-func (m *WriterTracker) Flush() error {
+func (m *Writer) Flush() error {
 	startTime := time.Now()
 	defer func() {
 		slog.Info("Flush done", "flushTime", time.Since(startTime))
@@ -160,7 +160,7 @@ func (m *WriterTracker) Flush() error {
 	return nil
 }
 
-func (m *WriterTracker) Close() ([]string, error) {
+func (m *Writer) Close() ([]string, error) {
 	m.pendingWritersLock.Lock()
 	m.activeWriterLock.Lock()
 	oldWriter := m.activeWriter
