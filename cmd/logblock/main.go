@@ -14,10 +14,10 @@ import (
 
 	"github.com/akmistry/go-nbd"
 
+	"github.com/akmistry/logblock2/internal/adaptor"
 	"github.com/akmistry/logblock2/internal/app/logblock"
 	"github.com/akmistry/logblock2/internal/block"
 	"github.com/akmistry/logblock2/internal/storage/local"
-	"github.com/akmistry/logblock2/internal/adaptor"
 )
 
 var (
@@ -91,37 +91,37 @@ func main() {
 		log.Println("http.ListenAndServe: ", http.ListenAndServe("localhost:6060", nil))
 	}()
 
-  blobDir := filepath.Join(dataDir, "blobs")
-  walDir := filepath.Join(dataDir, "wal")
+	blobDir := filepath.Join(dataDir, "blobs")
+	walDir := filepath.Join(dataDir, "wal")
 
-	blobSource, err := local.NewBlobSource(blobDir)
+	blobStore, err := local.NewBlobStore(blobDir)
 	if err != nil {
 		panic(err)
 	}
-	metaBs := block.NewBlobMetadataStore(blobSource)
+	metaBs := block.NewBlobMetadataStore(blobStore)
 
-	logSource, err := local.NewLogSource(walDir)
+	logSource, err := local.NewLogStore(walDir)
 	if err != nil {
 		panic(err)
 	}
 
-  blockOpts := block.BlockOptions{
-    BlobSource:          blobSource,
-    LogSource:           logSource,
-    BlockSize:           blockSize,
-    NumBlocks:          int64(deviceSize / blockSize),
-    TargetTableSize:     targetTableSize,
-    MinTableUtilisation: 0.5,
-    MetadataStore:       metaBs,
-  }
+	blockOpts := block.BlockOptions{
+		BlobStore:           blobStore,
+		LogStore:           logSource,
+		BlockSize:           blockSize,
+		NumBlocks:           int64(deviceSize / blockSize),
+		TargetTableSize:     targetTableSize,
+		MinTableUtilisation: 0.5,
+		MetadataStore:       metaBs,
+	}
 
-  bf, err := block.OpenBlockFileWithOptions(blockOpts)
-  if err != nil {
-    panic(err)
-  }
-  defer bf.Close()
+	bf, err := block.OpenBlockFileWithOptions(blockOpts)
+	if err != nil {
+		panic(err)
+	}
+	defer bf.Close()
 
-		blockDev := adaptor.NewReadWriter(bf, blockSize)
+	blockDev := adaptor.NewReadWriter(bf, blockSize)
 
 	nbdOpts := nbd.BlockDeviceOptions{
 		BlockSize:     blockSize,

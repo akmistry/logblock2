@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	_ = (storage.BlobSource)((*BlobSource)(nil))
-	_ = (storage.LogSource)((*LogSource)(nil))
+	_ = (storage.BlobStore)((*BlobStore)(nil))
+	_ = (storage.LogStore)((*LogStore)(nil))
 )
 
 type fileReader struct {
@@ -46,31 +46,31 @@ func openFileReader(fpath string) (*fileReader, error) {
 	return r, nil
 }
 
-type BlobSource struct {
+type BlobStore struct {
 	dir string
 }
 
-func NewBlobSource(dir string) (*BlobSource, error) {
+func NewBlobStore(dir string) (*BlobStore, error) {
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("local.BlobSource: error making log dir %s: %w", dir, err)
+		return nil, fmt.Errorf("local.BlobStore: error making log dir %s: %w", dir, err)
 	}
 
-	s := &BlobSource{
+	s := &BlobStore{
 		dir: dir,
 	}
 	return s, nil
 }
 
-func (s *BlobSource) makeFilePath(name string) string {
+func (s *BlobStore) makeFilePath(name string) string {
 	return filepath.Join(s.dir, name)
 }
 
-func (s *BlobSource) makeTempFile() (*os.File, error) {
+func (s *BlobStore) makeTempFile() (*os.File, error) {
 	return os.CreateTemp(s.dir, tempBlobPattern)
 }
 
-func (s *BlobSource) Open(name string) (storage.BlobReader, error) {
+func (s *BlobStore) Open(name string) (storage.BlobReader, error) {
 	fpath := s.makeFilePath(name)
 	return openFileReader(fpath)
 }
@@ -101,7 +101,7 @@ func (w *blobWriter) Close() error {
 	return nil
 }
 
-func (s *BlobSource) Create(name string) (storage.BlobWriter, error) {
+func (s *BlobStore) Create(name string) (storage.BlobWriter, error) {
 	f, err := s.makeTempFile()
 	if err != nil {
 		return nil, err
@@ -112,32 +112,32 @@ func (s *BlobSource) Create(name string) (storage.BlobWriter, error) {
 	}, nil
 }
 
-func (s *BlobSource) Remove(name string) error {
+func (s *BlobStore) Remove(name string) error {
 	fpath := s.makeFilePath(name)
 	return os.Remove(fpath)
 }
 
-type LogSource struct {
+type LogStore struct {
 	dir string
 }
 
-func NewLogSource(dir string) (*LogSource, error) {
+func NewLogStore(dir string) (*LogStore, error) {
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("local.LogSource: error making log dir %s: %w", dir, err)
+		return nil, fmt.Errorf("local.LogStore: error making log dir %s: %w", dir, err)
 	}
 
-	s := &LogSource{
+	s := &LogStore{
 		dir: dir,
 	}
 	return s, nil
 }
 
-func (s *LogSource) makeFilePath(name string) string {
+func (s *LogStore) makeFilePath(name string) string {
 	return filepath.Join(s.dir, name)
 }
 
-func (s *LogSource) Open(name string) (storage.LogReader, error) {
+func (s *LogStore) Open(name string) (storage.LogReader, error) {
 	fpath := s.makeFilePath(name)
 	return openFileReader(fpath)
 }
@@ -151,7 +151,7 @@ func (w *fileWriter) Flush() error {
 	return w.File.Sync()
 }
 
-func (s *LogSource) Create(name string) (storage.LogWriter, error) {
+func (s *LogStore) Create(name string) (storage.LogWriter, error) {
 	fpath := s.makeFilePath(name)
 	f, err := os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0755)
 	if err != nil {
@@ -164,7 +164,7 @@ func (s *LogSource) Create(name string) (storage.LogWriter, error) {
 	return w, nil
 }
 
-func (s *LogSource) Remove(name string) error {
+func (s *LogStore) Remove(name string) error {
 	fpath := s.makeFilePath(name)
 	return os.Remove(fpath)
 }

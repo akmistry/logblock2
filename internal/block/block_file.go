@@ -40,8 +40,8 @@ const (
 )
 
 type BlockOptions struct {
-	BlobSource          storage.BlobSource
-	LogSource           storage.LogSource
+	BlobStore           storage.BlobStore
+	LogStore            storage.LogStore
 	BlockSize           int
 	NumBlocks           int64
 	TargetTableSize     int64
@@ -53,8 +53,8 @@ type BlockOptions struct {
 
 type BlockFile struct {
 	opts       BlockOptions
-	dataSource storage.BlobSource
-	logSource  storage.LogSource
+	dataSource storage.BlobStore
+	logSource  storage.LogStore
 	numBlocks  int64
 	blockSize  int
 
@@ -72,8 +72,8 @@ type BlockFile struct {
 func OpenBlockFileWithOptions(opts BlockOptions) (*BlockFile, error) {
 	startTime := time.Now()
 
-	if opts.BlobSource == nil || opts.LogSource == nil {
-		return nil, errors.New("BlobSource and LogSource must be non-nil")
+	if opts.BlobStore == nil || opts.LogStore == nil {
+		return nil, errors.New("BlobStore and LogStore must be non-nil")
 	}
 	if opts.BlockSize < MinBlockSize || opts.BlockSize > MaxBlockSize {
 		return nil, fmt.Errorf("BlockSize must be between %d and %d",
@@ -93,8 +93,8 @@ func OpenBlockFileWithOptions(opts BlockOptions) (*BlockFile, error) {
 
 	bf := &BlockFile{
 		opts:          opts,
-		dataSource:    opts.BlobSource,
-		logSource:     opts.LogSource,
+		dataSource:    opts.BlobStore,
+		logSource:     opts.LogStore,
 		numBlocks:     opts.NumBlocks,
 		blockSize:     opts.BlockSize,
 		nextSeq:       1,

@@ -14,7 +14,7 @@ type BlobWriter interface {
 	io.WriteCloser
 }
 
-type BlobSource interface {
+type BlobStore interface {
 	Open(name string) (BlobReader, error)
 	Create(name string) (BlobWriter, error)
 	Remove(name string) error
@@ -32,7 +32,7 @@ type LogReader interface {
 	Size() int64
 }
 
-type LogSource interface {
+type LogStore interface {
 	Open(name string) (LogReader, error)
 	Create(name string) (LogWriter, error)
 	Remove(name string) error

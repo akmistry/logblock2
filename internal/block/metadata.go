@@ -13,10 +13,10 @@ const (
 )
 
 type BlobMetadataStore struct {
-	bs storage.BlobSource
+	bs storage.BlobStore
 }
 
-func NewBlobMetadataStore(bs storage.BlobSource) *BlobMetadataStore {
+func NewBlobMetadataStore(bs storage.BlobStore) *BlobMetadataStore {
 	return &BlobMetadataStore{
 		bs: bs,
 	}
