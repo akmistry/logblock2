@@ -91,27 +91,34 @@ func OpenBlockFileWithOptions(opts BlockOptions) (*BlockFile, error) {
 		return nil, errors.New("MinTableUtilisation must be between 0.1 and 0.9")
 	}
 
+	meta, err := metadata.LoadMetadata(opts.MetadataStore)
+	if errors.Is(err, fs.ErrNotExist) {
+		slog.Info("Metadata not found, creating new device")
+		if opts.NumBlocks == 0 {
+			slog.Error("Device size must be specified on a new device")
+			return nil, errors.New("device size must be specified on a new device")
+		} else if opts.BlockSize == 0 {
+			slog.Error("Block size must be specified on a new device")
+			return nil, errors.New("block size must be specified on a new device")
+		}
+		meta = metadata.NewMetadata_BlockStore(
+			opts.MetadataStore, opts.BlockSize, uint64(opts.NumBlocks))
+	} else if err != nil {
+		return nil, fmt.Errorf("error loading metadata: %v", err)
+	}
+
 	bf := &BlockFile{
 		opts:          opts,
 		dataSource:    opts.BlobStore,
 		logSource:     opts.LogStore,
-		numBlocks:     opts.NumBlocks,
-		blockSize:     opts.BlockSize,
+		numBlocks:     int64(meta.NumBlocks()),
+		blockSize:     meta.BlockSize(),
 		nextSeq:       1,
-		readerTracker: tracker.NewReader(opts.BlockSize, opts.NumBlocks),
-		writerTracker: tracker.NewWriter(opts.BlockSize),
+		readerTracker: tracker.NewReader(meta.BlockSize(), int64(meta.NumBlocks())),
+		writerTracker: tracker.NewWriter(meta.BlockSize()),
+		meta:          meta,
 	}
 	bf.writeCompactRunner = util.NewOneRunner(bf.compactWriter)
-
-	var err error
-	bf.meta, err = metadata.LoadMetadata(opts.MetadataStore)
-	if errors.Is(err, fs.ErrNotExist) {
-		slog.Warn("Metadata not found, creating new device")
-		bf.meta = metadata.NewMetadata_BlockStore(
-			opts.MetadataStore, bf.blockSize, uint64(bf.numBlocks))
-	} else if err != nil {
-		return nil, fmt.Errorf("error loading metadata: %v", err)
-	}
 
 	dfs := bf.meta.ListDataFiles()
 	for _, df := range dfs {

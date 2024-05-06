@@ -107,7 +107,7 @@ func main() {
 
 	blockOpts := block.BlockOptions{
 		BlobStore:           blobStore,
-		LogStore:           logSource,
+		LogStore:            logSource,
 		BlockSize:           blockSize,
 		NumBlocks:           int64(deviceSize / blockSize),
 		TargetTableSize:     targetTableSize,
@@ -124,14 +124,14 @@ func main() {
 	blockDev := adaptor.NewReadWriter(bf, blockSize)
 
 	nbdOpts := nbd.BlockDeviceOptions{
-		BlockSize:     blockSize,
+		BlockSize:     bf.BlockSize(),
 		ConcurrentOps: 4,
 	}
 	var serv *nbd.NbdServer
 	if nbdUseNetlink {
-		serv, err = nbd.NewServerWithNetlink(nbdIndex, blockDev, int64(deviceSize), nbdOpts)
+		serv, err = nbd.NewServerWithNetlink(nbdIndex, blockDev, bf.Size(), nbdOpts)
 	} else {
-		serv, err = nbd.NewServer(nbdDev, blockDev, int64(deviceSize), nbdOpts)
+		serv, err = nbd.NewServer(nbdDev, blockDev, bf.Size(), nbdOpts)
 	}
 	if err != nil {
 		log.Println("Error creating NBD", err)
