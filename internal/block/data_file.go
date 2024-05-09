@@ -4,10 +4,11 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/akmistry/go-util/truncatedreader"
+
 	"github.com/akmistry/logblock2/internal/adaptor"
 	"github.com/akmistry/logblock2/internal/sparseblock"
 	"github.com/akmistry/logblock2/internal/t"
-	"github.com/akmistry/logblock2/internal/util"
 )
 
 type ReadAtCloser interface {
@@ -31,11 +32,11 @@ type DataFile struct {
 
 type fixedSparseReader struct {
 	sparseFileReader
-	fr *util.FixedSizeReader
+	tr io.ReaderAt
 }
 
 func (r *fixedSparseReader) ReadAt(b []byte, off int64) (int, error) {
-	return r.fr.ReadAt(b, off)
+	return r.tr.ReadAt(b, off)
 }
 
 func NewSparseBlockFromReader(r ReadAtCloser, blockSize int, size int64, name string) (*DataFile, error) {
@@ -45,7 +46,7 @@ func NewSparseBlockFromReader(r ReadAtCloser, blockSize int, size int64, name st
 	}
 	sf.LogLoadStats(slog.Info)
 
-	fsa := &fixedSparseReader{sf, util.NewFixedSizeReader(sf, size)}
+	fsa := &fixedSparseReader{sf, truncatedreader.NewReader(sf, size)}
 	ba := adaptor.NewBlockReader(fsa, blockSize)
 	return &DataFile{
 		BlockHoleReader: ba,

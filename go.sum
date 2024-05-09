@@ -1,7 +1,7 @@
 github.com/akmistry/go-nbd v0.0.0-20240123100654-96f47ebf0866 h1:I4SnQW0HxnPYf7kI7eBSSGiA3wIT6oX8FKN+ECyX8cc=
 github.com/akmistry/go-nbd v0.0.0-20240123100654-96f47ebf0866/go.mod h1:PP9ihVdbztbVk7oAvoVAu0Z7vu96i4apdfY+rNphUHs=
-github.com/akmistry/go-util v0.0.0-20240424010834-ba08d48f141a h1:fzSsJ9d7ujrRvFsPWe71w6MI11Ttu2tTLM4QFurq1kw=
-github.com/akmistry/go-util v0.0.0-20240424010834-ba08d48f141a/go.mod h1:pRNcIQWnXG0a2iwqpHxdxJaqgebe8llfxWyfqovOUTk=
+github.com/akmistry/go-util v0.0.0-20240509014900-0285267e19ab h1:cXv7KxhWLIOBCY5G6x4lKFqXBOJoaJf4iHLJOTNhne0=
+github.com/akmistry/go-util v0.0.0-20240509014900-0285267e19ab/go.mod h1:pRNcIQWnXG0a2iwqpHxdxJaqgebe8llfxWyfqovOUTk=
 github.com/bits-and-blooms/bitset v1.13.0 h1:bAQ9OPNFYbGHV6Nez0tmNI0RiEu7/hxlYJRUA0wFAVE=
 github.com/bits-and-blooms/bitset v1.13.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
