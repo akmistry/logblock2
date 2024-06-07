@@ -17,12 +17,17 @@ import (
 	"github.com/akmistry/logblock2/internal/adaptor"
 	"github.com/akmistry/logblock2/internal/app/logblock"
 	"github.com/akmistry/logblock2/internal/block"
+	"github.com/akmistry/logblock2/internal/storage"
+	"github.com/akmistry/logblock2/internal/storage/cloud"
 	"github.com/akmistry/logblock2/internal/storage/local"
 )
 
 var (
 	sizeFlag    = flag.String("size", "", "Device size")
 	verboseFlag = flag.Bool("verbose", false, "Verbose logging")
+
+	blobstoreFlag     = flag.String("blobstore", "", "URL for blob storage backend")
+	blobCacheSizeFlag = flag.String("blob-cache-size", "8G", "Size of blob cache")
 
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 )
@@ -91,15 +96,31 @@ func main() {
 		log.Println("http.ListenAndServe: ", http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	blobDir := filepath.Join(dataDir, "blobs")
-	walDir := filepath.Join(dataDir, "wal")
-
-	blobStore, err := local.NewBlobStore(blobDir)
-	if err != nil {
-		panic(err)
+	var blobStore, metaBlobStore storage.BlobStore
+	if *blobstoreFlag != "" {
+		cacheSize, err := logblock.ParseSizeString(*blobCacheSizeFlag)
+		if err != nil {
+			panic(err)
+		}
+		stagingDir := filepath.Join(dataDir, "staging")
+		cacheDir := filepath.Join(dataDir, "blob-cache")
+		cloudBs, err := cloud.NewBlobStore(*blobstoreFlag, stagingDir, cacheDir, int64(cacheSize))
+		if err != nil {
+			panic(err)
+		}
+		blobStore = cloudBs
+		metaBlobStore = cloudBs.Base()
+	} else {
+		blobDir := filepath.Join(dataDir, "blobs")
+		blobStore, err = local.NewBlobStore(blobDir)
+		if err != nil {
+			panic(err)
+		}
+		metaBlobStore = blobStore
 	}
-	metaBs := block.NewBlobMetadataStore(blobStore)
+	metaStore := block.NewBlobMetadataStore(metaBlobStore)
 
+	walDir := filepath.Join(dataDir, "wal")
 	logSource, err := local.NewLogStore(walDir)
 	if err != nil {
 		panic(err)
@@ -112,7 +133,7 @@ func main() {
 		NumBlocks:           int64(deviceSize / blockSize),
 		TargetTableSize:     targetTableSize,
 		MinTableUtilisation: 0.5,
-		MetadataStore:       metaBs,
+		MetadataStore:       metaStore,
 	}
 
 	bf, err := block.OpenBlockFileWithOptions(blockOpts)
