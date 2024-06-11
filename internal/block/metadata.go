@@ -1,6 +1,7 @@
 package block
 
 import (
+	"context"
 	"io"
 
 	"github.com/akmistry/logblock2/internal/metadata"
@@ -32,7 +33,7 @@ func (s *BlobMetadataStore) Load() (*pb.Metadata, error) {
 }
 
 func (s *BlobMetadataStore) Store(m *pb.Metadata) error {
-	w, err := s.bs.Create(metadataBlobName)
+	w, err := s.bs.Create(context.TODO(), metadataBlobName)
 	if err != nil {
 		return err
 	}

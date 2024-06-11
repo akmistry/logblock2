@@ -1,6 +1,7 @@
 package block
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -214,9 +215,9 @@ func (bf *BlockFile) openTableFile(name string) (*DataFile, error) {
 	return df, nil
 }
 
-func (bf *BlockFile) createFile() (storage.BlobWriter, string, error) {
+func (bf *BlockFile) createFile(ctx context.Context) (storage.BlobWriter, string, error) {
 	name := bf.generateNextTableName()
-	f, err := bf.dataSource.Create(name)
+	f, err := bf.dataSource.Create(ctx, name)
 	if err != nil {
 		return nil, "", err
 	}
@@ -247,8 +248,11 @@ func (bf *BlockFile) generateNextTableName() string {
 }
 
 func (bf *BlockFile) compactToFile(r t.HoleReaderAt) (string, error) {
+	ctx, cf := context.WithCancel(context.TODO())
+	defer cf()
+
 	startTime := time.Now()
-	writeFile, name, err := bf.createFile()
+	writeFile, name, err := bf.createFile(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -259,14 +263,12 @@ func (bf *BlockFile) compactToFile(r t.HoleReaderAt) (string, error) {
 	buildTime := time.Now()
 	if err != nil {
 		slog.Error("Unable to build table", "name", name, "error", err)
-		bf.dataSource.Remove(name)
 		return "", err
 	}
 	err = writeFile.Close()
 	closeTime := time.Now()
 	if err != nil {
 		slog.Error("Unable to close table", "name", name, "error", err)
-		bf.dataSource.Remove(name)
 		return "", err
 	}
 

@@ -1,6 +1,7 @@
 package local
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -78,9 +79,13 @@ func (s *BlobStore) Open(name string) (storage.BlobReader, error) {
 type blobWriter struct {
 	*os.File
 	path string
+
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func (w *blobWriter) Close() error {
+	defer w.cancel()
 	defer os.Remove(w.File.Name())
 
 	err := w.File.Sync()
@@ -93,6 +98,7 @@ func (w *blobWriter) Close() error {
 	if err != nil {
 		return err
 	}
+
 	err = os.Rename(w.File.Name(), w.path)
 	if err != nil {
 		return err
@@ -101,15 +107,32 @@ func (w *blobWriter) Close() error {
 	return nil
 }
 
-func (s *BlobStore) Create(name string) (storage.BlobWriter, error) {
+func (w *blobWriter) waitCancel(f *os.File) {
+	<-w.ctx.Done()
+
+	if w.File == nil {
+		return
+	}
+
+	// If Close() was successful, both of these should fail.
+	os.Remove(f.Name())
+	f.Close()
+}
+
+func (s *BlobStore) Create(ctx context.Context, name string) (storage.BlobWriter, error) {
 	f, err := s.makeTempFile()
 	if err != nil {
 		return nil, err
 	}
-	return &blobWriter{
-		File: f,
-		path: s.makeFilePath(name),
-	}, nil
+	ctx, cf := context.WithCancel(ctx)
+	bw := &blobWriter{
+		File:   f,
+		path:   s.makeFilePath(name),
+		ctx:    ctx,
+		cancel: cf,
+	}
+	go bw.waitCancel(f)
+	return bw, nil
 }
 
 func (s *BlobStore) Remove(name string) error {

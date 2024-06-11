@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"io"
 )
 
@@ -16,7 +17,7 @@ type BlobWriter interface {
 
 type BlobStore interface {
 	Open(name string) (BlobReader, error)
-	Create(name string) (BlobWriter, error)
+	Create(ctx context.Context, name string) (BlobWriter, error)
 	Remove(name string) error
 }
 

@@ -1,6 +1,8 @@
 package cloud
 
 import (
+	"context"
+
 	cu "github.com/akmistry/cloud-util"
 	_ "github.com/akmistry/cloud-util/all"
 	"github.com/akmistry/cloud-util/cache"
@@ -57,8 +59,16 @@ func (s *BlobStore) Open(name string) (storage.BlobReader, error) {
 	return s.bs.Get(name)
 }
 
-func (s *BlobStore) Create(name string) (storage.BlobWriter, error) {
-	return s.bs.Put(name)
+func (s *BlobStore) Create(ctx context.Context, name string) (storage.BlobWriter, error) {
+	w, err := s.bs.Put(name)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		<-ctx.Done()
+		w.Cancel()
+	}()
+	return w, nil
 }
 
 func (s *BlobStore) Remove(name string) error {
